@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginBottom="10dp"
+    app:cardBackgroundColor="#1E1E3A"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="14dp"
+        android:gravity="center_vertical">
+
+        <!-- Cột trái: Biểu tượng loại sự kiện -->
+        <LinearLayout
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:background="#1AFFFFFF"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/txtEventIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚠️"
+                android:textSize="24sp" />
+
+        </LinearLayout>
+
+        <!-- Cột giữa: Thông tin sự kiện -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingHorizontal="12dp">
+
+            <!-- Badge loại sự kiện -->
+            <TextView
+                android:id="@+id/txtEventType"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="FIRE_ALARM"
+                android:textColor="#FF6B35"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:background="#22FF6B35"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:layout_marginBottom="5dp" />
+
+            <!-- Mô tả sự kiện -->
+            <TextView
+                android:id="@+id/txtEventDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Phát hiện hỏa hoạn tại khu vực A"
+                android:textColor="#E0E8F0"
+                android:textSize="13sp"
+                android:maxLines="2"
+                android:ellipsize="end" />
+
+            <!-- Thời gian -->
+            <TextView
+                android:id="@+id/txtEventTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2026-06-09 · 10:30:00"
+                android:textColor="#66AABBCC"
+                android:textSize="11sp"
+                android:layout_marginTop="4dp" />
+
+        </LinearLayout>
+
+        <!-- Cột phải: Thông số cảm biến lúc xảy ra -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="end"
+            android:background="#0AFFFFFF"
+            android:padding="8dp">
+
+            <!-- Nhiệt độ -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🌡️"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/txtEventTemp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="52°C"
+                    android:textColor="#FF6B35"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="3dp" />
+            </LinearLayout>
+
+            <!-- Khói -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💨"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/txtEventSmoke"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="420ppm"
+                    android:textColor="#7EC8E3"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:layout_marginStart="3dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

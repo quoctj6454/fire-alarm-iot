@@ -1,0 +1,45 @@
+# ===== Secrets & env =====
+.env
+.env.*
+!.env.example
+env.txt
+serviceAccountKey.json
+**/serviceAccountKey.json
+
+# Firebase (bỏ comment 2 dòng dưới nếu muốn commit google-services)
+# google-services.json
+# FireAlarm/app/google-services.json
+
+~$*
+# ===== Python =====
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ===== Android / Gradle =====
+FireAlarm/.gradle/
+FireAlarm/build/
+FireAlarm/app/build/
+FireAlarm/local.properties
+FireAlarm/.idea/
+FireAlarm/.cxx/
+FireAlarm/captures/
+*.iml
+*.apk
+*.aab
+
+# ===== Backend IDE =====
+FireAlarm_Backend/.idea/
+FireAlarm_Backend/.venv/
+
+# ===== Arduino / OS =====
+*.o
+*.elf
+.DS_Store
+Thumbs.db
+
+# ===== Doc backup (tùy chọn) =====
+*.docx.bak
