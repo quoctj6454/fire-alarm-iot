@@ -111,6 +111,25 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         notifyItemRangeInserted(startPos, moreEvents.size());
     }
 
+    /**
+     * Cập nhật danh sách với dữ liệu đã được lọc (dùng khi Filter thay đổi).
+     * Bắt buộc phải có đủ 3 bước để RecyclerView vẽ lại đúng.
+     *
+     * @param newList Danh sách đã lọc từ ViewModel
+     */
+    public void updateData(List<SystemEventResponse> newList) {
+        // BƯỚC 1: Xóa sạch danh sách cũ trong Adapter
+        events.clear();
+
+        // BƯỚC 2: Thêm toàn bộ danh sách mới đã được lọc
+        if (newList != null) {
+            events.addAll(newList);
+        }
+
+        // BƯỚC 3: Báo RecyclerView vẽ lại toàn bộ danh sách
+        notifyDataSetChanged();
+    }
+
     // ===================================================================
     //  HÀM PRIVATE HỖ TRỢ
     // ===================================================================

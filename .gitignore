@@ -43,3 +43,6 @@ Thumbs.db
 
 # ===== Doc backup (tùy chọn) =====
 *.docx.bak
+
+# ===== Test / Mock data =====
+mock_data.json

@@ -9,6 +9,21 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.animation.AnimationUtils;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.widget.ImageView;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import android.widget.FrameLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -39,6 +54,13 @@ public class MainActivity extends AppCompatActivity {
     private static final String NOTIF_CHANNEL_ID = "fire_alarm_channel";
     private static final int NOTIF_ID = 1001;
     private static final int NOTIF_PERMISSION_REQUEST_CODE = 101;
+
+    // ─────────────────────────────────────────────────────────────────
+    //  ĐỔI URL NÀY THÀNH ĐỊA CHỈ SERVER CAMERA CỦA BẠN
+    //  Ví dụ MJPEG (ESP32-CAM): "http://192.168.1.100:81/stream"
+    //  Ví dụ trang web HLS   : "http://192.168.1.100:8080/"
+    // ─────────────────────────────────────────────────────────────────
+    private static final String CAMERA_STREAM_URL = "http://192.168.11.41:5000/api/stream";
 
     // Ngưỡng cảnh báo
     private static final long TEMP_THRESHOLD  = 50;  // °C
@@ -75,16 +97,34 @@ public class MainActivity extends AppCompatActivity {
     private View layoutAnalytics;
     private BottomNavigationView bottomNavigation;
     private TextView txtTotalWarnings;
+    private TextView txtWarningsToday;
+    private TextView txtTotalFires;
     private TextView txtFiresToday;
     private TextView txtLastEventTime;
     private RecyclerView recyclerEvents;
     private ProgressBar progressEvents;
 
-    // ===== ADAPTER & PAGINATION =====
+    // ===== PHÂN TRANG =====
     private EventAdapter eventAdapter;
-    private int currentOffset = 0;
-    private static final int PAGE_LIMIT = 20;
-    private boolean isLoadingMore = false;
+    private MaterialButton btnPagePrev;
+    private MaterialButton btnPageNext;
+    private TextView txtPageInfo;
+
+    // ===== NÚT FILTER ANALYTICS =====
+    private MaterialButton btnTabAllEvents;
+    private MaterialButton btnTabFireOnly;
+    private MaterialButton btnTabWarningOnly;
+
+    // ===== CAMERA STREAM =====
+    private ImageView imgCameraStream;
+    private View layoutStreamPlaceholder;
+    private TextView txtStreamStatus;
+    private Thread mjpegThread;
+    private volatile boolean streamRunning = false;
+    // Frame dropping: decoder ghi vào đây; UI chỉ đọc frame MỚI NHẤT
+    private final AtomicReference<Bitmap> latestFrame = new AtomicReference<>(null);
+    // true = đã có 1 runnable đang chờ trên UI thread; tránh xếp hàng vô hạn
+    private final AtomicBoolean framePending = new AtomicBoolean(false);
 
     // ===================================================================
     //  VÒNG ĐỜI ACTIVITY - KHÔNG THAY ĐỔI PHẦN KHỞI TẠO FIREBASE/AUTH
@@ -124,6 +164,9 @@ public class MainActivity extends AppCompatActivity {
         // 1. Ánh xạ View
         bindViews();
 
+        // 1.5. Khởi động camera stream ngay sau khi bind views
+        setupCameraStream(CAMERA_STREAM_URL);
+
         // 2. Tạo kênh thông báo (Android 8+)
         createNotificationChannel();
 
@@ -146,6 +189,10 @@ public class MainActivity extends AppCompatActivity {
         // 6. Setup Bottom Navigation và RecyclerView (Thêm mới)
         setupRecyclerView();
         setupBottomNavigation();
+
+        // 7. Setup 3 nút filter + nút phân trang
+        setupFilterButtons();
+        setupPaginationButtons();
 
         // 5. Xử lý nút bấm qua ViewModel (Thay đổi)
         btnTogglePump.setOnClickListener(v -> {
@@ -201,10 +248,195 @@ public class MainActivity extends AppCompatActivity {
         layoutAnalytics  = findViewById(R.id.layout_analytics);
         bottomNavigation = findViewById(R.id.bottom_navigation);
         txtTotalWarnings = findViewById(R.id.txtTotalWarnings);
+        txtWarningsToday = findViewById(R.id.txtWarningsToday);
+        txtTotalFires    = findViewById(R.id.txtTotalFires);
         txtFiresToday    = findViewById(R.id.txtFiresToday);
         txtLastEventTime = findViewById(R.id.txtLastEventTime);
         recyclerEvents   = findViewById(R.id.recyclerEvents);
         progressEvents   = findViewById(R.id.progressEvents);
+
+        // --- Nút phân trang ---
+        btnPagePrev = findViewById(R.id.btnPagePrev);
+        btnPageNext = findViewById(R.id.btnPageNext);
+        txtPageInfo = findViewById(R.id.txtPageInfo);
+
+        // --- Nút filter ---
+        btnTabAllEvents    = findViewById(R.id.btnTabAllEvents);
+        btnTabFireOnly     = findViewById(R.id.btnTabFireOnly);
+        btnTabWarningOnly  = findViewById(R.id.btnTabWarningOnly);
+
+        // --- Camera stream ---
+        imgCameraStream         = findViewById(R.id.img_camera_stream);
+        layoutStreamPlaceholder = findViewById(R.id.layout_stream_placeholder);
+        txtStreamStatus         = findViewById(R.id.txt_stream_status);
+    }
+
+    // ===================================================================
+    //  CAMERA STREAM — MJPEG DECODER (OkHttp + ImageView)
+    // ===================================================================
+
+    /**
+     * Khởi động MJPEG decoder trong background thread.
+     * Tự động retry mỗi 5 giây nếu mất kết nối.
+     * URL được lấy từ hằng số CAMERA_STREAM_URL.
+     */
+    private void setupCameraStream(String streamUrl) {
+        streamRunning = true;
+
+        mjpegThread = new Thread(() -> {
+            OkHttpClient client = new OkHttpClient.Builder()
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(0, TimeUnit.SECONDS)   // Không timeout khi đang stream
+                    .build();
+
+            while (streamRunning) {
+                Request request = new Request.Builder().url(streamUrl).build();
+                try (Response response = client.newCall(request).execute()) {
+
+                    if (!response.isSuccessful() || response.body() == null) {
+                        runOnUiThread(this::showStreamOffline);
+                        sleepBeforeRetry();
+                        continue;
+                    }
+
+                    InputStream inputStream = response.body().byteStream();
+                    ByteArrayOutputStream frameBuffer = new ByteArrayOutputStream(32768);
+                    // Chunk lớn hơn = ít syscall hơn = throughput tốt hơn
+                    byte[] chunk = new byte[16384];
+                    boolean inFrame = false;
+                    int prevByte = -1;
+                    boolean firstFrameReceived = false;
+
+                    while (streamRunning) {
+                        int n = inputStream.read(chunk);
+                        if (n == -1) break;
+
+                        for (int i = 0; i < n; i++) {
+                            int b = chunk[i] & 0xFF;
+
+                            if (!inFrame) {
+                                // Tìm JPEG SOI marker: 0xFF 0xD8
+                                if (prevByte == 0xFF && b == 0xD8) {
+                                    inFrame = true;
+                                    frameBuffer.reset();
+                                    frameBuffer.write(0xFF);
+                                    frameBuffer.write(0xD8);
+                                }
+                            } else {
+                                frameBuffer.write(b);
+                                // Tìm JPEG EOI marker: 0xFF 0xD9
+                                if (prevByte == 0xFF && b == 0xD9) {
+                                    byte[] frameBytes = frameBuffer.toByteArray();
+                                    Bitmap bitmap = BitmapFactory.decodeByteArray(
+                                            frameBytes, 0, frameBytes.length);
+
+                                    if (bitmap != null) {
+                                        final boolean isFirst = !firstFrameReceived;
+                                        if (!firstFrameReceived) firstFrameReceived = true;
+
+                                        // Ghi frame mới nhất vào AtomicReference
+                                        latestFrame.set(bitmap);
+
+                                        // Chỉ post lên UI nếu KHÔNG có frame nào đang chờ
+                                        // → tránh xếp hàng, luôn hiển thị frame mới nhất
+                                        if (framePending.compareAndSet(false, true)) {
+                                            runOnUiThread(() -> {
+                                                if (imgCameraStream == null) return;
+                                                Bitmap toRender = latestFrame.getAndSet(null);
+                                                if (toRender != null) {
+                                                    imgCameraStream.setImageBitmap(toRender);
+                                                }
+                                                if (isFirst) {
+                                                    imgCameraStream.setVisibility(View.VISIBLE);
+                                                    layoutStreamPlaceholder.setVisibility(View.GONE);
+                                                    txtStreamStatus.setText("● LIVE");
+                                                    txtStreamStatus.setTextColor(
+                                                            Color.parseColor("#4CAF50"));
+                                                }
+                                                // Mở khoá: cho phép post frame tiếp theo
+                                                framePending.set(false);
+                                            });
+                                        }
+                                        // Nếu framePending=true: frame này bị drop,
+                                        // latestFrame đã được ghi đè = frame cũ bị loại bỏ
+                                    }
+                                    inFrame = false;
+                                    frameBuffer.reset();
+                                }
+                            }
+                            prevByte = b;
+                        }
+                    }
+
+                } catch (IOException e) {
+                    Log.w(TAG, "Camera stream ngắt kết nối: " + e.getMessage());
+                }
+
+                if (streamRunning) {
+                    runOnUiThread(this::showStreamOffline);
+                    sleepBeforeRetry();
+                }
+            }
+        });
+
+        mjpegThread.setName("mjpeg-stream-thread");
+        mjpegThread.setDaemon(true);
+        mjpegThread.start();
+    }
+
+    /** Ngủ 5 giây trước khi thử kết nối lại */
+    private void sleepBeforeRetry() {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /** Hiển thị placeholder + badge OFFLINE khi mất kết nối stream */
+    private void showStreamOffline() {
+        if (imgCameraStream == null) return;
+        imgCameraStream.setVisibility(View.GONE);
+        layoutStreamPlaceholder.setVisibility(View.VISIBLE);
+        txtStreamStatus.setText("● OFFLINE");
+        txtStreamStatus.setTextColor(Color.parseColor("#EF5350"));
+    }
+
+    // ===================================================================
+    //  VÒNG ĐỜI ACTIVITY — QUẢN LÝ MJPEG THREAD
+    // ===================================================================
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Khởi động lại stream nếu đã bị dừng khi pause
+        if (!streamRunning && imgCameraStream != null) {
+            setupCameraStream(CAMERA_STREAM_URL);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Dừng stream để tiết kiệm tài nguyên khi app chạy nền
+        streamRunning = false;
+        if (mjpegThread != null) {
+            mjpegThread.interrupt();
+            mjpegThread = null;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        streamRunning = false;
+        if (mjpegThread != null) {
+            mjpegThread.interrupt();
+            mjpegThread = null;
+        }
+        latestFrame.set(null);
+        framePending.set(false);
+        imgCameraStream = null;
+        super.onDestroy();
     }
 
     // ===================================================================
@@ -212,25 +444,20 @@ public class MainActivity extends AppCompatActivity {
     // ===================================================================
     private void observeViewModel() {
         viewModel.getDashboardState().observe(this, state -> {
-            // 1. Xử lý Loading (Nghiệp vụ giao diện sắp tới của bạn)
             if (state.isLoading) {
-                // TODO: Hiện vòng quay ProgressBar
+                progressEvents.setVisibility(View.VISIBLE);
             } else {
-                // TODO: Ẩn vòng quay ProgressBar
+                progressEvents.setVisibility(View.GONE);
             }
 
-            // 2. Xử lý Lỗi
             if (state.errorMessage != null) {
-                Log.e(TAG, state.errorMessage);
-                // Có thể hiện Toast báo lỗi mạng cho người dùng
+                Log.e(TAG, "ViewModel error: " + state.errorMessage);
+                android.widget.Toast.makeText(this, state.errorMessage, android.widget.Toast.LENGTH_SHORT).show();
             }
 
-            // 3. Xử lý dữ liệu Real-time Firebase
+            // Dữ liệu Real-time Firebase
             if (state.realtimeStatus != null) {
-                // Cập nhật biến cờ nội bộ
                 this.manualPumpOn = state.realtimeStatus.manual_pump;
-
-                // Gọi lại đúng hàm updateUI cũ của bạn để vẽ giao diện không bị lệch 1 ly
                 updateUI(
                         state.realtimeStatus.temp,
                         state.realtimeStatus.smoke,
@@ -239,28 +466,39 @@ public class MainActivity extends AppCompatActivity {
                 );
             }
 
-            // 4. Cập nhật dữ liệu Analytics lên UI
+            // 4 chỉ số card từ /api/summary — nguồn sự thật là PostgreSQL
             if (state.summaryData != null) {
                 txtTotalWarnings.setText(String.valueOf(state.summaryData.total_warnings));
+                txtWarningsToday.setText(String.valueOf(state.summaryData.warnings_today));
+                txtTotalFires.setText(String.valueOf(state.summaryData.total_fires));
                 txtFiresToday.setText(String.valueOf(state.summaryData.fires_today));
                 String lastTime = state.summaryData.last_event_time != null
                         ? state.summaryData.last_event_time : "--";
                 txtLastEventTime.setText(lastTime);
             }
+        });
 
-            if (state.recentEvents != null) {
-                if (currentOffset == 0) {
-                    // Trang đầu: set mới toàn bộ
-                    eventAdapter.setEvents(state.recentEvents);
-                } else {
-                    // Trang tiếp: append vào cuối
-                    eventAdapter.appendEvents(state.recentEvents);
-                }
-                isLoadingMore = false;
-                progressEvents.setVisibility(View.GONE);
-                // Cập nhật offset cho lần tải tiếp
-                currentOffset += state.recentEvents.size();
+        // Danh sách sự kiện — thay thế toàn bộ list mỗi khi đổi trang/tab
+        viewModel.getFilteredEvents().observe(this, events -> {
+            if (events != null) {
+                eventAdapter.updateData(events);
             }
+        });
+
+        // Trạng thái phân trang — cập nhật nút + label
+        viewModel.getPaginationState().observe(this, state -> {
+            int page       = state[0];
+            int totalPages = state[1];
+            int totalItems = state[2];
+
+            txtPageInfo.setText("Trang " + page + "/" + totalPages
+                    + "  (" + totalItems + " sự kiện)");
+
+            btnPagePrev.setEnabled(page > 1);
+            btnPageNext.setEnabled(page < totalPages);
+
+            btnPagePrev.setAlpha(page > 1 ? 1f : 0.35f);
+            btnPageNext.setAlpha(page < totalPages ? 1f : 0.35f);
         });
     }
 
@@ -544,28 +782,7 @@ public class MainActivity extends AppCompatActivity {
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerEvents.setLayoutManager(layoutManager);
         recyclerEvents.setAdapter(eventAdapter);
-
-        // Bắt sự kiện cuộn tới cuối để tải thêm dữ liệu
-        recyclerEvents.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                super.onScrolled(recyclerView, dx, dy);
-
-                // Chỉ xử lý khi đang cuộn xuống (dy > 0)
-                if (dy <= 0 || isLoadingMore) return;
-
-                int totalItems  = layoutManager.getItemCount();
-                int lastVisible = layoutManager.findLastVisibleItemPosition();
-                int threshold   = 3; // Bắt đầu tải trước 3 item khi gần cuối
-
-                if (lastVisible >= totalItems - 1 - threshold) {
-                    // Đã cuộn gần tới cuối → Tải trang tiếp
-                    isLoadingMore = true;
-                    progressEvents.setVisibility(View.VISIBLE);
-                    viewModel.loadMoreEvents(currentOffset, PAGE_LIMIT);
-                }
-            }
-        });
+        // Scroll listener đã bỏ — phân trang dùng nút ◀ ▶ thay cho infinite scroll
     }
 
     // ===================================================================
@@ -585,5 +802,58 @@ public class MainActivity extends AppCompatActivity {
             }
             return false;
         });
+    }
+
+    // ===================================================================
+    //  SETUP 3 NÚT FILTER (Thêm mới)
+    // ===================================================================
+    private void setupFilterButtons() {
+        btnTabAllEvents.setOnClickListener(v -> {
+            viewModel.loadEventPage(FireViewModel.FILTER_ALL, 1);
+            setActiveFilterButton(btnTabAllEvents);
+        });
+
+        btnTabFireOnly.setOnClickListener(v -> {
+            viewModel.loadEventPage(FireViewModel.FILTER_FIRE, 1);
+            setActiveFilterButton(btnTabFireOnly);
+        });
+
+        btnTabWarningOnly.setOnClickListener(v -> {
+            viewModel.loadEventPage(FireViewModel.FILTER_WARNING, 1);
+            setActiveFilterButton(btnTabWarningOnly);
+        });
+
+        setActiveFilterButton(btnTabAllEvents);
+    }
+
+    private void setupPaginationButtons() {
+        btnPagePrev.setOnClickListener(v -> viewModel.loadPrevPage());
+        btnPageNext.setOnClickListener(v -> viewModel.loadNextPage());
+    }
+
+    /**
+     * Cập nhật style nút active/inactive để người dùng biết đang ở filter nào.
+     * Nút active: màu cam (#FF6B35), chữ trắng.
+     * Nút inactive: nền tối (#1A1A2E), chữ xám, có viền.
+     */
+    private void setActiveFilterButton(MaterialButton activeBtn) {
+        MaterialButton[] allBtns = {btnTabAllEvents, btnTabFireOnly, btnTabWarningOnly};
+        for (MaterialButton btn : allBtns) {
+            if (btn == activeBtn) {
+                // Đang active
+                btn.setBackgroundTintList(
+                        android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#FF6B35")));
+                btn.setTextColor(android.graphics.Color.parseColor("#FFFFFF"));
+                btn.setStrokeWidth(0);
+            } else {
+                // Không active
+                btn.setBackgroundTintList(
+                        android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#1A1A2E")));
+                btn.setTextColor(android.graphics.Color.parseColor("#AABBCC"));
+                btn.setStrokeWidth(1);
+                btn.setStrokeColor(
+                        android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#33FFFFFF")));
+            }
+        }
     }
 }

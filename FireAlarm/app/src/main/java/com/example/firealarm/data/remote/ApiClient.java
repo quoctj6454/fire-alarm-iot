@@ -4,10 +4,11 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ApiClient {
-    // TODO: Thay bằng địa chỉ IPv4 máy tính của bạn (VD: 192.168.1.5)
-    // Phải có dấu "/" ở cuối
-    private static final String BASE_URL = "http://192.168.11.82:8000/";
+    // Deploy lên server đám mây Render (Chạy 24/24)
+    private static final String BASE_URL = "https://firealarm-backend-kccv.onrender.com/";
 
+    // Dùng khi test local — thay bằng IPv4 máy tính của bạn
+    // private static final String BASE_URL = "http://192.168.1.14:8000/";
     private static Retrofit retrofit = null;
 
     public static ApiService getApiService() {

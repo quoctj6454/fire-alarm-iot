@@ -191,6 +191,146 @@
                                 android:layout_marginTop="4dp" />
                         </LinearLayout>
                     </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
+                            android:letterSpacing="0.15"
+                            android:text="🛡️  TRẠNG THÁI AN TOÀN"
+                            android:textColor="#AABBCC"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <FrameLayout
+                            android:id="@+id/layoutSafetyBg"
+                            android:layout_width="match_parent"
+                            android:layout_height="100dp"
+                            android:background="@drawable/bg_safe_card">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:gravity="center"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/txtSafetyIcon"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="✅"
+                                    android:textSize="30sp" />
+
+                                <TextView
+                                    android:id="@+id/txtSafetyStatus"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:letterSpacing="0.15"
+                                    android:text="AN TOÀN"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="28sp"
+                                    android:textStyle="bold" />
+                            </LinearLayout>
+                        </FrameLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- ===== CARD_CAMERA_STREAM: Camera / Video stream trực tiếp ===== -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/cv_camera_stream"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="14dp"
+                app:cardBackgroundColor="#0F0F1E"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <!-- Header: tiêu đề + badge LIVE -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="10dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="📷  CAMERA TRỰC TIẾP"
+                            android:textColor="#AABBCC"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.15" />
+
+                        <TextView
+                            android:id="@+id/txt_stream_status"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="● LIVE"
+                            android:textColor="#4CAF50"
+                            android:textSize="10sp"
+                            android:textStyle="bold"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="2dp"
+                            android:background="#1A4CAF50" />
+                    </LinearLayout>
+
+                    <!-- Khung hiển thị stream — chiều cao 200dp (~16:9) -->
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp">
+
+                        <!-- ImageView hiển thị từng JPEG frame của luồng MJPEG -->
+                        <ImageView
+                            android:id="@+id/img_camera_stream"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="#000000"
+                            android:scaleType="fitCenter"
+                            android:adjustViewBounds="true"
+                            android:visibility="gone" />
+
+                        <!-- Placeholder hiển thị khi chưa kết nối -->
+                        <LinearLayout
+                            android:id="@+id/layout_stream_placeholder"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center"
+                            android:background="#0A0A14"
+                            android:visibility="visible">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📷"
+                                android:textSize="42sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Đang kết nối camera..."
+                                android:textColor="#44AABBCC"
+                                android:textSize="13sp"
+                                android:layout_marginTop="8dp" />
+                        </LinearLayout>
+                    </FrameLayout>
+
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
@@ -259,54 +399,6 @@
                 app:cardCornerRadius="20dp"
                 app:cardElevation="12dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="🛡️  TRẠNG THÁI AN TOÀN"
-                        android:textColor="#AABBCC"
-                        android:textSize="11sp"
-                        android:textStyle="bold"
-                        android:letterSpacing="0.15"
-                        android:layout_marginBottom="12dp" />
-
-                    <FrameLayout
-                        android:id="@+id/layoutSafetyBg"
-                        android:layout_width="match_parent"
-                        android:layout_height="100dp"
-                        android:background="@drawable/bg_safe_card">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:orientation="vertical"
-                            android:gravity="center">
-
-                            <TextView
-                                android:id="@+id/txtSafetyIcon"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="✅"
-                                android:textSize="30sp" />
-
-                            <TextView
-                                android:id="@+id/txtSafetyStatus"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="AN TOÀN"
-                                android:textColor="#FFFFFF"
-                                android:textSize="28sp"
-                                android:textStyle="bold"
-                                android:letterSpacing="0.15"
-                                android:layout_marginTop="4dp" />
-                        </LinearLayout>
-                    </FrameLayout>
-                </LinearLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- ===== CARD_PUMP_STATUS: Trạng thái máy bơm ===== -->
@@ -519,12 +611,13 @@
                     android:letterSpacing="0.15"
                     android:layout_marginBottom="16dp" />
 
+                <!-- 2 card thống kê side-by-side -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <!-- Tổng số cảnh báo -->
+                    <!-- ===== CARD CẢNH BÁO ===== -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -532,37 +625,79 @@
                         android:orientation="vertical"
                         android:gravity="center"
                         android:background="#12FFFFFF"
-                        android:padding="16dp"
+                        android:padding="14dp"
                         android:layout_marginEnd="8dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="⚠️"
-                            android:textSize="28sp" />
+                            android:textSize="26sp" />
 
+                        <!-- Tổng cảnh báo mọi thời gian -->
                         <TextView
                             android:id="@+id/txtTotalWarnings"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="--"
                             android:textColor="#FF6B35"
-                            android:textSize="32sp"
+                            android:textSize="30sp"
                             android:textStyle="bold"
-                            android:layout_marginTop="6dp" />
+                            android:layout_marginTop="4dp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="TỔNG CẢNH BÁO"
                             android:textColor="#66AABBCC"
-                            android:textSize="10sp"
+                            android:textSize="9sp"
                             android:textStyle="bold"
                             android:letterSpacing="0.1"
-                            android:layout_marginTop="4dp" />
+                            android:layout_marginTop="2dp" />
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#22FFFFFF"
+                            android:layout_marginVertical="10dp" />
+
+                        <!-- Cảnh báo hôm nay -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📅"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:id="@+id/txtWarningsToday"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="--"
+                                android:textColor="#FF6B35"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:layout_marginStart="4dp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="HÔM NAY"
+                            android:textColor="#55AABBCC"
+                            android:textSize="9sp"
+                            android:letterSpacing="0.1"
+                            android:layout_marginTop="2dp" />
+
                     </LinearLayout>
 
-                    <!-- Số vụ cháy hôm nay -->
+                    <!-- ===== CARD CHÁY ===== -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -570,34 +705,76 @@
                         android:orientation="vertical"
                         android:gravity="center"
                         android:background="#12FFFFFF"
-                        android:padding="16dp"
+                        android:padding="14dp"
                         android:layout_marginStart="8dp">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="🔥"
-                            android:textSize="28sp" />
+                            android:textSize="26sp" />
 
+                        <!-- Tổng cháy mọi thời gian -->
                         <TextView
-                            android:id="@+id/txtFiresToday"
+                            android:id="@+id/txtTotalFires"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="--"
                             android:textColor="#EF5350"
-                            android:textSize="32sp"
+                            android:textSize="30sp"
                             android:textStyle="bold"
-                            android:layout_marginTop="6dp" />
+                            android:layout_marginTop="4dp" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="VỤ CHÁY HÔM NAY"
+                            android:text="TỔNG VỤ CHÁY"
                             android:textColor="#66AABBCC"
-                            android:textSize="10sp"
+                            android:textSize="9sp"
                             android:textStyle="bold"
                             android:letterSpacing="0.1"
-                            android:layout_marginTop="4dp" />
+                            android:layout_marginTop="2dp" />
+
+                        <!-- Divider -->
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#22FFFFFF"
+                            android:layout_marginVertical="10dp" />
+
+                        <!-- Cháy hôm nay -->
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📅"
+                                android:textSize="13sp" />
+
+                            <TextView
+                                android:id="@+id/txtFiresToday"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="--"
+                                android:textColor="#EF5350"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:layout_marginStart="4dp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="HÔM NAY"
+                            android:textColor="#55AABBCC"
+                            android:textSize="9sp"
+                            android:letterSpacing="0.1"
+                            android:layout_marginTop="2dp" />
+
                     </LinearLayout>
 
                 </LinearLayout>
@@ -683,32 +860,90 @@
                 style="@style/Widget.MaterialComponents.Button" />
         </LinearLayout>
 
-        <!-- ===== HEADER DANH SÁCH SỰ KIỆN ===== -->
+        <!-- ===== HEADER DANH SÁCH SỰ KIỆN + PHÂN TRANG ===== -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
+            android:orientation="vertical"
             android:paddingHorizontal="16dp"
             android:paddingBottom="8dp">
 
-            <TextView
-                android:layout_width="0dp"
+            <!-- Dòng 1: Label + ProgressBar -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="NHẬT KÝ SỰ KIỆN"
-                android:textColor="#55AABBCC"
-                android:textSize="10sp"
-                android:textStyle="bold"
-                android:letterSpacing="0.2" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-            <!-- ProgressBar hiện khi đang load thêm trang -->
-            <ProgressBar
-                android:id="@+id/progressEvents"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:visibility="gone"
-                android:indeterminateTint="#FF6B35" />
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="NHẬT KÝ SỰ KIỆN"
+                    android:textColor="#55AABBCC"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.2" />
+
+                <ProgressBar
+                    android:id="@+id/progressEvents"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:visibility="gone"
+                    android:indeterminateTint="#FF6B35" />
+            </LinearLayout>
+
+            <!-- Dòng 2: Nút phân trang -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="6dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPagePrev"
+                    android:layout_width="36dp"
+                    android:layout_height="30dp"
+                    android:text="◀"
+                    android:textSize="11sp"
+                    android:textColor="#AABBCC"
+                    android:enabled="false"
+                    app:backgroundTint="#1E1E30"
+                    app:cornerRadius="8dp"
+                    app:strokeColor="#33FFFFFF"
+                    app:strokeWidth="1dp"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp" />
+
+                <TextView
+                    android:id="@+id/txtPageInfo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="Trang 1/1  (0 sự kiện)"
+                    android:textColor="#77AABBCC"
+                    android:textSize="11sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnPageNext"
+                    android:layout_width="36dp"
+                    android:layout_height="30dp"
+                    android:text="▶"
+                    android:textSize="11sp"
+                    android:textColor="#AABBCC"
+                    android:enabled="false"
+                    app:backgroundTint="#1E1E30"
+                    app:cornerRadius="8dp"
+                    app:strokeColor="#33FFFFFF"
+                    app:strokeWidth="1dp"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp" />
+
+            </LinearLayout>
         </LinearLayout>
 
         <!-- ===== RECYCLERVIEW DANH SÁCH SỰ KIỆN ===== -->

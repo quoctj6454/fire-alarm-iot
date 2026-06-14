@@ -1,10 +1,9 @@
 package com.example.firealarm.data.repository;
 
 import androidx.lifecycle.LiveData;
-import com.example.firealarm.data.model.api.SystemEventResponse;
+import com.example.firealarm.data.model.api.PaginatedEventsResponse;
 import com.example.firealarm.data.model.api.SystemSummaryResponse;
 import com.example.firealarm.data.model.firebase.SystemStatus;
-import java.util.List;
 import retrofit2.Callback;
 
 public class FireRepository {
@@ -30,15 +29,12 @@ public class FireRepository {
     }
 
     // --- API ROUTING ---
-    public void getRecentEvents(Callback<List<SystemEventResponse>> callback) {
-        apiRepository.fetchEvents(20, 0, callback);
+    public void getEvents(int limit, int offset, String eventType, Boolean todayOnly,
+                          Callback<PaginatedEventsResponse> callback) {
+        apiRepository.fetchEvents(limit, offset, eventType, todayOnly, callback);
     }
 
     public void getSystemSummary(Callback<SystemSummaryResponse> callback) {
         apiRepository.fetchSummary(callback);
-    }
-
-    public void getEventsPaged(int offset, int limit, Callback<List<SystemEventResponse>> callback) {
-        apiRepository.fetchEvents(limit, offset, callback);
     }
 }

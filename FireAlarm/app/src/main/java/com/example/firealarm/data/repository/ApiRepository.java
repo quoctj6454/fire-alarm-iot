@@ -1,10 +1,9 @@
 package com.example.firealarm.data.repository;
 
-import com.example.firealarm.data.model.api.SystemEventResponse;
+import com.example.firealarm.data.model.api.PaginatedEventsResponse;
 import com.example.firealarm.data.model.api.SystemSummaryResponse;
 import com.example.firealarm.data.remote.ApiClient;
 import com.example.firealarm.data.remote.ApiService;
-import java.util.List;
 import retrofit2.Callback;
 
 public class ApiRepository {
@@ -14,8 +13,9 @@ public class ApiRepository {
         apiService = ApiClient.getApiService();
     }
 
-    public void fetchEvents(int limit, int offset, Callback<List<SystemEventResponse>> callback) {
-        apiService.getEvents(limit, offset).enqueue(callback);
+    public void fetchEvents(int limit, int offset, String eventType, Boolean todayOnly,
+                            Callback<PaginatedEventsResponse> callback) {
+        apiService.getEvents(limit, offset, eventType, todayOnly).enqueue(callback);
     }
 
     public void fetchSummary(Callback<SystemSummaryResponse> callback) {
