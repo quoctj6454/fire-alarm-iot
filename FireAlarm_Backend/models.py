@@ -30,11 +30,17 @@ class SystemSummary(BaseModel):
 # Response phân trang cho danh sách sự kiện
 class PaginatedEventsResponse(BaseModel):
     items: List[SystemEvent]
-    total: int
+    total: int  # -1 khi include_total=false (client giữ total cũ)
     page: int
     total_pages: int
     limit: int
     offset: int
+
+
+# Gộp summary + events — 1 request cho tab Thống kê
+class DashboardResponse(BaseModel):
+    summary: SystemSummary
+    events: PaginatedEventsResponse
 
 
 class WarningCount(BaseModel):
