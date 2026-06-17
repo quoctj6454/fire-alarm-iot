@@ -18,11 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Đầu ngày hôm nay theo giờ Việt Nam (UTC+7), dùng cho filter "hôm nay"
-_VN_TODAY_START = (
-    "((NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date "
-    "AT TIME ZONE 'Asia/Ho_Chi_Minh')"
-)
+# So sánh ngày lịch theo giờ Việt Nam (UTC+7) — dùng cho filter "hôm nay"
+_VN_TODAY_DATE = "(NOW() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date"
+_VN_EVENT_DATE = "DATE(created_at AT TIME ZONE 'Asia/Ho_Chi_Minh')"
+_VN_IS_TODAY = f"{_VN_EVENT_DATE} = {_VN_TODAY_DATE}"
 
 
 def _event_filter_clause(event_type: Optional[str], today_only: bool) -> Tuple[str, list]:
@@ -32,7 +31,7 @@ def _event_filter_clause(event_type: Optional[str], today_only: bool) -> Tuple[s
         conditions.append("event_type = %s")
         params.append(event_type)
     if today_only:
-        conditions.append(f"created_at >= {_VN_TODAY_START}")
+        conditions.append(_VN_IS_TODAY)
     where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
     return where_clause, params
 
@@ -42,10 +41,10 @@ def _fetch_summary(cur) -> dict:
         SELECT
             COUNT(*) FILTER (WHERE event_type = 'WARNING') AS total_warnings,
             COUNT(*) FILTER (WHERE event_type = 'WARNING'
-                AND created_at >= {_VN_TODAY_START}) AS warnings_today,
+                AND {_VN_IS_TODAY}) AS warnings_today,
             COUNT(*) FILTER (WHERE event_type = 'FIRE') AS total_fires,
             COUNT(*) FILTER (WHERE event_type = 'FIRE'
-                AND created_at >= {_VN_TODAY_START}) AS fires_today,
+                AND {_VN_IS_TODAY}) AS fires_today,
             MAX(created_at) AS last_event_time
         FROM system_events
     """)
